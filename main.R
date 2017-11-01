@@ -1,7 +1,8 @@
 trips<-list(data.frame());
 for(i in 1:length(X))
 {
-  
-  trips[[i]] = split(X[[i]], cumsum (X[[i]]$mode == 10))
+  for ( j in 1:length((split(X[[i]], cumsum (X[[i]]$mode == 10)))))
+  {
+    trips[[j]] = split(X[[i]], cumsum (X[[i]]$mode == 10))[[j]]
+  }
 }
-trips[[1]][1]
