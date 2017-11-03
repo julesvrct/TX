@@ -45,7 +45,7 @@ for (t in trips)
   trips_speeds[[index]] = v
 } 
 # A noter que certaines vitesse sont aberrante (800km/h) du fait que par exemple on a ce genre de données:
-# un temps très resséré pour 2 points très éloignés (voir ci-dessous élements 1 et 2)
+# un temps trés resséré pour 2 points trés éloignés (voir ci-dessous élements 1 et 2)
 
 #trips[[146]]
 #id                date      lat      lng mode transportation_mode
@@ -70,8 +70,22 @@ for (i in 1:nrow(info_trips))
 plot(info_trips$id,info_trips$mean_speed)
 box = boxplot(info_trips$mean_speed)
 
+i = 1
+for (t in trips_speeds)
+{
+  i = i + 1
+  t = as.vector(t)
+  t = t[t<200] #suppression vitesses supérieures à 200 kph
+  trips_speeds[[i]] = t
+}
 
+for (i in 1:nrow(info_trips))
+{
+  info_trips[i,2] = sum(trips_speeds[[i]])/length(trips_speeds[[i]])
+}
 
+plot(info_trips$id,info_trips$mean_speed)
 
-
+summary(info_trips)
+# Avec summary on voit que bcp de voyages ont des vitesses moyenne trés proches de 0, on est donc dans un contexte où l'utilisateur n'est pas en 'voyage' mais plutôt dans l'état 'still' (inactif)
 
