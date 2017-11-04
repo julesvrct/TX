@@ -89,3 +89,6 @@ plot(info_trips$id,info_trips$mean_speed)
 summary(info_trips)
 # Avec summary on voit que bcp de voyages ont des vitesses moyenne trés proches de 0, on est donc dans un contexte où l'utilisateur n'est pas en 'voyage' mais plutôt dans l'état 'still' (inactif)
 
+# Une idée pourrait être de rectfier les positions GPS d'un voyage lorsque l'utilisateur est en mode 'still' et que la postion GPS change. En effet, la position GPS doit rester la même.
+# Cela nous evite de traiter/supprimer des vitesses supérieures à 200 kph.
+# Ainsi il s'agit de s'intérésser à des voyages pour lesquels le mode 'still' est minoritaire
