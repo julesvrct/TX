@@ -8,7 +8,6 @@ UTM <- LongLatToUTM(compiegne_data$lng,compiegne_data$lat,31)
 compiegne_data$X<- UTM$X
 compiegne_data$Y<- UTM$Y
 
-#compiegne_data = compiegne_data[c("id","date","X","Y","mode","transportation_mode")]
 X <- split(compiegne_data, compiegne_data$id, drop=TRUE)
 
 trips<-list(data.frame())
@@ -69,59 +68,17 @@ for (t in trips)
 } 
 
 vitesse_UTM(trips[[2]][4,],trips[[2]][5,])>120
-# A noter que certaines vitesse sont aberrante (800km/h) du fait que par exemple on a ce genre de données:
-# un temps trés resséré pour 2 points trés éloignés (voir ci-dessous élements 1 et 2)
 
-#trips[[146]]
-#id                date      lat      lng mode transportation_mode
-#33819 59096f9dc9e77c0001b5a200 2017-09-12 18:22:54 49.40659 2.793882   10    Exiting Geofence
-#33820 59096f9dc9e77c0001b5a200 2017-09-12 18:22:55 49.40680 2.793413    3               Still
-#33821 59096f9dc9e77c0001b5a200 2017-09-12 18:27:00 49.40680 2.793413    3               Still
-#33822 59096f9dc9e77c0001b5a200 2017-09-12 18:27:58 49.40680 2.793413    9   Entering Geofence
 
-#Du coup :
-
-#trips_speeds[[146]]
-#[1] 806.1009   0.0000   0.0000
-k=0
-for (t in trips)
-{ i=i+1
-  print(t)
-  
-}
 for (i in 1:nrow(info_trips))
 {
   info_trips[i,2] = sum(trips_speeds[[i]])/length(trips_speeds[[i]])
 }
 
-#Lorsque l'on fait 'mean(info_trips[,2])' on obtient une vitesse moyenne pour les voyages de 758.2359, aberrant !
-#Il s'agit de nettoyer les données:
 
 plot(info_trips$id,info_trips$mean_speed)
 box = boxplot(info_trips$mean_speed)
-
-i = 1
-for (t in trips_speeds)
-{
-  i = i + 1
-  t = as.vector(t)
-  t = t[t<200] #suppression vitesses supérieures à 200 kph
-  trips_speeds[[i]] = t
-}
-
-for (i in 1:nrow(info_trips))
-{
-  info_trips[i,2] = sum(trips_speeds[[i]])/length(trips_speeds[[i]])
-}
-
-plot(info_trips$id,info_trips$mean_speed)
-
 summary(info_trips)
 
 
-# Avec summary on voit que bcp de voyages ont des vitesses moyenne trés proches de 0, on est donc dans un contexte où l'utilisateur n'est pas en 'voyage' mais plutôt dans l'état 'still' (inactif)
-
-# Une idée pourrait être de rectfier les positions GPS d'un voyage lorsque l'utilisateur est en mode 'still' et que la postion GPS change. En effet, la position GPS doit rester la même.
-# Cela nous evite de traiter/supprimer des vitesses supérieures à 200 kph.
-# Ainsi il s'agit de s'intérésser à des voyages pour lesquels le mode 'still' est minoritaire
 
