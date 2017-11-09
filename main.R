@@ -4,10 +4,11 @@ source('functions/vitesse_UTM.R')
 library(plyr)
 
 UTM <- LongLatToUTM(compiegne_data$lng,compiegne_data$lat,31)
-compiegne_data$lng <- UTM$X
-compiegne_data$lat <- UTM$Y
-compiegne_data = rename(compiegne_data, c("lat"="Y","lng"="X"))
-compiegne_data = compiegne_data[c("id","date","X","Y","mode","transportation_mode")]
+
+compiegne_data$X<- UTM$X
+compiegne_data$Y<- UTM$Y
+
+#compiegne_data = compiegne_data[c("id","date","X","Y","mode","transportation_mode")]
 X <- split(compiegne_data, compiegne_data$id, drop=TRUE)
 
 trips<-list(data.frame())
@@ -19,7 +20,10 @@ for(i in 1:length(X))
     trips[[j]] = split(X[[i]], cumsum (X[[i]]$mode == 10))[[j]]
   }
 }
-
+for (j in 1:length(trips)) {
+  trips[[j]]=trips[[j]][-1,]
+  
+}
 # Trips est maintenant une liste de 350 objet. Chaque objet étant un data.frame
 
 # A t'on vraiment besoin de créer un data.frame qui contient dans l'une de ses colonnes un data.frame de longueur différent pour chaque id de voyage ? 
@@ -35,15 +39,36 @@ info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA) #autres global fea
 trips_speeds = list(vector())
 index = 0
 for (t in trips)
-{
+{ 
   index = index + 1
   v = vector()
   for (i in 1:(length(t$id)-1))
   {
-    v = c(v,vitesse_UTM(t[i,],t[i+1,]))
+    
+  print(index)
+  if(is.null(vitesse_UTM(t[i,],t[i+1,]))  ) 
+  {
+    trips[[index]]=trips[[index]][-i,]
   }
+  else if(dim(t)[1]<2)
+  {
+    trips[[index]]=trips[[index]][-i,]
+  }
+  else if((!is.na(vitesse_UTM(t[i,],t[i+1,])) && vitesse_UTM(t[i,],t[i+1,]) >120 )|| vitesse_UTM(t[i,],t[i+1,])==0)
+  {
+    trips[[index]]=trips[[index]][-i,]
+  }
+  else
+  {
+    v = c(v,vitesse_UTM(t[i,],t[i+1,]))
+  } 
+  }
+  
   trips_speeds[[index]] = v
+  
 } 
+
+vitesse_UTM(trips[[2]][4,],trips[[2]][5,])>120
 # A noter que certaines vitesse sont aberrante (800km/h) du fait que par exemple on a ce genre de données:
 # un temps trés resséré pour 2 points trés éloignés (voir ci-dessous élements 1 et 2)
 
@@ -58,7 +83,12 @@ for (t in trips)
 
 #trips_speeds[[146]]
 #[1] 806.1009   0.0000   0.0000
-
+k=0
+for (t in trips)
+{ i=i+1
+  print(t)
+  
+}
 for (i in 1:nrow(info_trips))
 {
   info_trips[i,2] = sum(trips_speeds[[i]])/length(trips_speeds[[i]])
@@ -87,8 +117,11 @@ for (i in 1:nrow(info_trips))
 plot(info_trips$id,info_trips$mean_speed)
 
 summary(info_trips)
+
+
 # Avec summary on voit que bcp de voyages ont des vitesses moyenne trés proches de 0, on est donc dans un contexte où l'utilisateur n'est pas en 'voyage' mais plutôt dans l'état 'still' (inactif)
 
 # Une idée pourrait être de rectfier les positions GPS d'un voyage lorsque l'utilisateur est en mode 'still' et que la postion GPS change. En effet, la position GPS doit rester la même.
 # Cela nous evite de traiter/supprimer des vitesses supérieures à 200 kph.
 # Ainsi il s'agit de s'intérésser à des voyages pour lesquels le mode 'still' est minoritaire
+
