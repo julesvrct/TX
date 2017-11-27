@@ -19,10 +19,17 @@ for(i in 1:length(X))
     trips[[j]] = split(X[[i]], cumsum (X[[i]]$mode == 10))[[j]]
   }
 }
-for (j in 1:length(trips)) {
+
+for (j in 1:length(trips)) 
+{
   trips[[j]]=trips[[j]][-1,]
-  
 }
+
+for (k in 1:length(trips))
+{
+  trips[[k]] = trips[[k]][order(trips[[k]]$date),]
+}
+
 # Trips est maintenant une liste de 350 objet. Chaque objet étant un data.frame
 
 # A t'on vraiment besoin de créer un data.frame qui contient dans l'une de ses colonnes un data.frame de longueur différent pour chaque id de voyage ? 
@@ -41,10 +48,11 @@ for (t in trips)
 { 
   index = index + 1
   v = vector()
+  
+  
   for (i in 1:(length(t$id)-1))
   {
     
-  print(index)
   if(is.null(vitesse_UTM(t[i,],t[i+1,]))  ) 
   {
     trips[[index]]=trips[[index]][-i,]
@@ -53,7 +61,7 @@ for (t in trips)
   {
     trips[[index]]=trips[[index]][-i,]
   }
-  else if((!is.na(vitesse_UTM(t[i,],t[i+1,])) && vitesse_UTM(t[i,],t[i+1,]) >120 )|| vitesse_UTM(t[i,],t[i+1,])==0)
+  else if((!is.na(vitesse_UTM(t[i,],t[i+1,])) && vitesse_UTM(t[i,],t[i+1,]) >120 ))
   {
     trips[[index]]=trips[[index]][-i,]
   }
@@ -64,21 +72,24 @@ for (t in trips)
   }
   
   trips_speeds[[index]] = v
-  
 } 
-
-vitesse_UTM(trips[[2]][4,],trips[[2]][5,])>120
-
 
 for (i in 1:nrow(info_trips))
 {
   info_trips[i,2] = sum(trips_speeds[[i]])/length(trips_speeds[[i]])
 }
 
-
 plot(info_trips$id,info_trips$mean_speed)
 box = boxplot(info_trips$mean_speed)
 summary(info_trips)
 
+info_trips = info_trips[-which(is.na(info_trips$mean_speed)),]
+summary(info_trips)
 
+
+require(ggmap)
+ligne5_part1=c(lat=49.41255914140619, lon=2.814817428588867)
+ligne5_map=get_map(location=ligne5_part1,zoom=14)
+ggmap(ligne5_map)
+ggmap(ligne5_map)+ geom_point(data=trips[[128]], aes(x=trips[[128]]$lng,y=trips[[128]]$lat,shape=label,label=format(date, '%H:%M:%S')), col="red", size=0.5, pch=1)+geom_text(data = trips[[128]], aes(x = lng, y = lat, label = format(date, '%H:%M:%S')), size = 3, vjust = 0, hjust = -0.5) 
 
