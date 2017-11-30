@@ -39,7 +39,7 @@ for (k in 1:length(trips))
 
 ### GLOBAL FEATURES
 
-info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA, std_speed=NA, mode_speed=NA, top_speed=NA, range_speed=NA, perc_speed=NA, Intq_speed=NA,Skew_speed=NA,Kurtosis_speed=NA, Coefvar_speed=NA, Autocor_speed=NA ) #autres global features à rajouter dans le data.frame.
+info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA, std_speed=NA, mode_speed=NA, top1_speed=NA,top2_speed=NA,top3_speed=NA, min1_speed=NA,min2_speed=NA,min3_speed=NA, range_speed=NA, upq_speed=NA,lowq_speed, Intq_speed=NA,Skew_speed=NA,Kurtosis_speed=NA, Coefvar_speed=NA, Autocor_speed=NA ) #autres global features à rajouter dans le data.frame.
 
 ## Vitesse
 trips_speeds = list(vector())
@@ -153,10 +153,25 @@ getmode <- function(v) {
 }
 
 for (i in 1:nrow(info_trips))
-{
-  info_trips[i,2] = sum(trips_speeds[[i]])/length(trips_speeds[[i]])
-  info_trips[i,3]=sd(trips_speeds[[i]])
-  info_trips[i,4]=getmode(trips_speeds[[i]])
+{ obj=trips_speeds
+  info_trips[i,2] = sum(obj[[i]])/length(obj[[i]])
+  info_trips[i,3]=sd (obj[[i]])
+  info_trips[i,4]=getmode(obj[[i]])
+  info_trips[i,5]=max((obj[[i]]))
+  info_trips[i,6]=max(obj[[i]][-which(obj[[i]]==info_trips[i,5])])
+  info_trips[i,7]=max(obj[[i]][-c(which(obj[[i]]==info_trips[i,5]),which(obj[[i]]==info_trips[i,6]))])
+  info_trips[i,8]=min((obj[[i]]))
+  info_trips[i,9]=min(obj[[i]][-which(obj[[i]]==info_trips[i,8])])
+  info_trips[i,10]=min(obj[[i]][-c(which(obj[[i]]==info_trips[i,8]),which(obj[[i]]==info_trips[i,9]))])
+  info_trips[i,11]=max((obj[[i]]))-min((obj[[i]]))
+  info_trips[i,12]=quantile(obj[[i]])[[4]]
+  info_trips[i,13]=quantile(obj[[i]])[[2]]
+  info_trips[i,14]=quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
+  
+  
+  
+  
+  
 }
 
 
