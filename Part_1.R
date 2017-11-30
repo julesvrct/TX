@@ -1,6 +1,7 @@
 source('functions/compy_data.R')
 source('functions/LongLatToUTM.R')
 source('functions/vitesse_UTM.R')
+source('functions/Angle.R')
 library(plyr)
 
 UTM <- LongLatToUTM(compiegne_data$lng,compiegne_data$lat,31)
