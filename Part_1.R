@@ -40,8 +40,6 @@ for (k in 1:length(trips))
 info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA) #autres global features à rajouter dans le data.frame.
 
 ## Vitesse
-# Objet : A list of vector that contain speed btw each point
-
 trips_speeds = list(vector())
 index = 0
 for (t in trips)
@@ -74,10 +72,63 @@ for (t in trips)
   trips_speeds[[index]] = v
 } 
 
+
+##Accceleration
+trips_accel = list(vector())
+index = 0
+for (t in trips)
+{  
+  index = index + 1
+  n=length(trips_speeds[[index]])
+  m=length(trips[[index]])-1
+  
+  a= vector()
+  for (k in 1:n-1)
+  {
+    if(0==0)
+    {
+      print(k)
+      a=c(a,(trips_speeds[[index]][k+1]-trips_speeds[[index]][k])/(as.double((trips[[index]][k+2,2]-trips[[index]][k,2]), units='hours')/2))
+    }
+  }
+  trips_accel[[index]]=a
+  
+}
+
+##Turn angle 
+course=list(vector())
+turnrate=list(vector())
+index=0
+for (t in trips) {
+  index=index+1
+  m=dim(trips[[index]])[1]-1
+  a=vector()
+  for(k in 1:m)
+  {
+    print(k)
+  a <- c(a,angle(c(trips[[index]]$lat[k + 1],trips[[index]]$lng[k + 1]), c(trips[[index]]$lat[k],trips[[index]]$lng[k])))
+  
+  }
+  a[is.na(a)]<-0
+  course[[index]]=a
+  b=vector()
+  for (k in 1:length(course[[index]])-1) {
+    b=c(b,(course[[index]][k+1]-course[[index]][k])/(as.double((trips[[index]][k+1,2]-trips[[index]][k,2]), units='secs')))
+  }
+  turnrate[[index]]=b
+}
+
+
 for (i in 1:nrow(info_trips))
 {
   info_trips[i,2] = sum(trips_speeds[[i]])/length(trips_speeds[[i]])
+  info_trips[i,3]= max(trips_speeds[[i]])
+  info_trips[i,4]= min(trips_speeds[[i]])
+  info_trips[i,5]= sum(trips_accel[[i]])/length(trips_accel[[i]])
+  info_trips[i,6]= max(trips_accel[[i]])
+  info_trips[i,7]= sum(turnrate[[i]])/length(turnrate[[i]])
 }
+
 
 plot(info_trips$id,info_trips$mean_speed)
 box = boxplot(info_trips$mean_speed)
