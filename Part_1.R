@@ -87,9 +87,9 @@ info_trips = info_trips[-which(is.na(info_trips$mean_speed)),]
 summary(info_trips)
 
 
-require(ggmap)
-ligne5_part1=c(lat=49.41255914140619, lon=2.814817428588867)
-ligne5_map=get_map(location=ligne5_part1,zoom=14)
-ggmap(ligne5_map)
-ggmap(ligne5_map)+ geom_point(data=trips[[128]], aes(x=trips[[128]]$lng,y=trips[[128]]$lat,shape=label,label=format(date, '%H:%M:%S')), col="red", size=0.5, pch=1)+geom_text(data = trips[[128]], aes(x = lng, y = lat, label = format(date, '%H:%M:%S')), size = 3, vjust = 0, hjust = -0.5) 
+#require(ggmap)
+#ligne5_part1=c(lat=49.41255914140619, lon=2.814817428588867)
+#ligne5_map=get_map(location=ligne5_part1,zoom=14)
+#ggmap(ligne5_map)
+#ggmap(ligne5_map)+ geom_point(data=trips[[128]], aes(x=trips[[128]]$lng,y=trips[[128]]$lat,shape=label,label=format(date, '%H:%M:%S')), col="red", size=0.5, pch=1)+geom_text(data = trips[[128]], aes(x = lng, y = lat, label = format(date, '%H:%M:%S')), size = 3, vjust = 0, hjust = -0.5) 
 
