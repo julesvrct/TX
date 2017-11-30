@@ -4,6 +4,7 @@ source('functions/vitesse_UTM.R')
 source('functions/Angle.R')
 library(plyr)
 
+compiegne_data=unique(compiegne_data)
 UTM <- LongLatToUTM(compiegne_data$lng,compiegne_data$lat,31)
 
 compiegne_data$X<- UTM$X
@@ -38,7 +39,7 @@ for (k in 1:length(trips))
 
 ### GLOBAL FEATURES
 
-info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA) #autres global features à rajouter dans le data.frame.
+info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA, std_speed=NA, mode_speed=NA, top_speed=NA, range_speed=NA, perc_speed=NA, Intq_speed=NA,Skew_speed=NA,Kurtosis_speed=NA, Coefvar_speed=NA, Autocor_speed=NA ) #autres global features à rajouter dans le data.frame.
 
 ## Vitesse
 trips_speeds = list(vector())
@@ -92,6 +93,7 @@ for (t in trips)
       a=c(a,(trips_speeds[[index]][k+1]-trips_speeds[[index]][k])/(as.double((trips[[index]][k+2,2]-trips[[index]][k,2]), units='hours')/2))
     }
   }
+  a[is.na(a)]<-0
   trips_accel[[index]]=a
   
 }
@@ -116,18 +118,45 @@ for (t in trips) {
   for (k in 1:length(course[[index]])-1) {
     b=c(b,(course[[index]][k+1]-course[[index]][k])/(as.double((trips[[index]][k+1,2]-trips[[index]][k,2]), units='secs')))
   }
+  b[is.na(b)]<-0
   turnrate[[index]]=b
 }
+### Distance / Distance la plus courte
 
+
+sinuo=vector()
+dist=list(vector())
+index=0
+for (t in trips) {
+  index=index+1
+  m=dim(trips[[index]])[1]
+  a=vector()
+  for(k in 1:m)
+  {
+    print(k)
+    a <-  c(a,sqrt((trips[[index]]$X[k + 1]-trips[[index]]$X[k])^2+(trips[[index]]$Y[k + 1]-trips[[index]]$Y[k])^2))
+    
+  }
+  a[is.na(a)]<-0
+  dist[[index]]=a
+  if(m==0)
+    sinuo[index]=0
+  else if(sqrt((trips[[index]]$X[m]-trips[[index]]$X[1])^2+(trips[[index]]$Y[m]-trips[[index]]$Y[1])^2)!=0)
+  sinuo[index]=sum(dist[[index]])/sqrt((trips[[index]]$X[m]-trips[[index]]$X[1])^2+(trips[[index]]$Y[m]-trips[[index]]$Y[1])^2)
+  else 
+    sinuo[index]=0
+}
+
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
 
 for (i in 1:nrow(info_trips))
 {
   info_trips[i,2] = sum(trips_speeds[[i]])/length(trips_speeds[[i]])
-  info_trips[i,3]= max(trips_speeds[[i]])
-  info_trips[i,4]= min(trips_speeds[[i]])
-  info_trips[i,5]= sum(trips_accel[[i]])/length(trips_accel[[i]])
-  info_trips[i,6]= max(trips_accel[[i]])
-  info_trips[i,7]= sum(turnrate[[i]])/length(turnrate[[i]])
+  info_trips[i,3]=sd(trips_speeds[[i]])
+  info_trips[i,4]=getmode(trips_speeds[[i]])
 }
 
 
