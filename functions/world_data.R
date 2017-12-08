@@ -48,15 +48,15 @@ for (i in 1:length(mode))
 }
 
 mobility <- data.frame(id,date,lat,lng,mode,transportation_mode)
-dataset <- mobility
+
 #DATASET SUCCESSFULLY CREATED
 #-------------------------------
 
-
+library(data.table)
 #We now want to select the data from Compiegne's area
-world_data = dataset
+world_data = mobility
 world_data = unique(setDT(world_data), by = c("id", "date"))
 
-
+world_data=as.data.frame(world_data)
 
 

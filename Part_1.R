@@ -1,16 +1,16 @@
-source('functions/compy_data.R')
+source('functions/world_data.R')
 source('functions/LongLatToUTM.R')
 source('functions/vitesse_UTM.R')
 source('functions/Angle.R')
 library(plyr)
 library(e1071) 
-compiegne_data=unique(compiegne_data)
-UTM <- LongLatToUTM(compiegne_data$lng,compiegne_data$lat,31)
+world_data=unique(world_data)
+UTM <- LongLatToUTM(world_data$lng,world_data$lat,31)
 
-compiegne_data$X<- UTM$X
-compiegne_data$Y<- UTM$Y
+world_data$X<- UTM$X
+world_data$Y<- UTM$Y
 
-X <- split(compiegne_data, compiegne_data$id, drop=TRUE)
+X <- split(world_data, world_data$id, drop=TRUE)
 
 trips<-list(data.frame())
 
@@ -31,6 +31,24 @@ for (k in 1:length(trips))
 {
   trips[[k]] = trips[[k]][order(trips[[k]]$date),]
 }
+
+
+
+for (k in 1:length(trips))
+{
+  trips[[k]] = trips[[k]][-which(trips[[k]][,5]==3),]
+  trips[[k]] = trips[[k]][-which(trips[[k]][,5]==9),]
+}
+
+n=vector()
+
+for (k in 1:length(trips))
+{
+if(nrow(trips[[k]])<2)
+  n=c(n,k)
+ 
+}
+trips=trips[-n]
 
 # Trips est maintenant une liste de 350 objet. Chaque objet étant un data.frame
 
@@ -147,7 +165,7 @@ for (t in trips) {
   if(m==0)
     sinuo[index]=0
   else if(sqrt((trips[[index]]$X[m]-trips[[index]]$X[1])^2+(trips[[index]]$Y[m]-trips[[index]]$Y[1])^2)!=0)
-  sinuo[index]=sum(dist[[index]])/sqrt((trips[[index]]$X[m]-trips[[index]]$X[1])^2+(trips[[index]]$Y[m]-trips[[index]]$Y[1])^2)
+  sinuo[index]=sum(dist[[index]])/(1.3*sqrt((trips[[index]]$X[m]-trips[[index]]$X[1])^2+(trips[[index]]$Y[m]-trips[[index]]$Y[1])^2))
   else 
     sinuo[index]=0
 }
@@ -236,7 +254,7 @@ for (i in 1:nrow(info_trips))
 
 
 plot(info_trips$id,info_trips$mean_speed)
-box = boxplot(info_trips$std_turn)
+box = boxplot(info_trips$mean_speed)
 summary(info_trips)
 
 info_trips = info_trips[-which(is.na(info_trips$mean_speed)),]
