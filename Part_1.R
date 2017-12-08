@@ -3,7 +3,7 @@ source('functions/LongLatToUTM.R')
 source('functions/vitesse_UTM.R')
 source('functions/Angle.R')
 library(plyr)
-
+library(e1071) 
 compiegne_data=unique(compiegne_data)
 UTM <- LongLatToUTM(compiegne_data$lng,compiegne_data$lat,31)
 
@@ -39,7 +39,12 @@ for (k in 1:length(trips))
 
 ### GLOBAL FEATURES
 
-info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA, std_speed=NA, mode_speed=NA, top1_speed=NA,top2_speed=NA,top3_speed=NA, min1_speed=NA,min2_speed=NA,min3_speed=NA, range_speed=NA, upq_speed=NA,lowq_speed, Intq_speed=NA,Skew_speed=NA,Kurtosis_speed=NA, Coefvar_speed=NA, Autocor_speed=NA ) #autres global features à rajouter dans le data.frame.
+info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA, std_speed=NA, mode_speed=NA, top1_speed=NA,top2_speed=NA,top3_speed=NA, min1_speed=NA,min2_speed=NA,min3_speed=NA, range_speed=NA, upq_speed=NA,lowq_speed=NA, Intq_speed=NA,Skew_speed=NA,Kurtosis_speed=NA, Coefvar_speed=NA
+                        , mean_accel=NA, std_accel=NA, mode_accel=NA, top1_accel=NA,top2_accel=NA,top3_accel=NA, min1_accel=NA,min2_speed=NA,min3_accel=NA, range_accel=NA, upq_accel=NA,lowq_accel=NA, Intq_accel=NA,Skew_accel=NA,Kurtosis_accel=NA, Coefvar_accel=NA
+                        , mean_turn=NA, std_turn=NA, mode_turn=NA, top1_turn=NA,top2_turn=NA,top3_turn=NA, min1_turn=NA,min2_turn=NA,min3_turn=NA, range_turn=NA, upq_turn=NA,lowq_turn=NA, Intq_turn=NA,Skew_turn=NA,Kurtosis_turn=NA, Coefvar_turn=NA
+                        
+                        )
+#autres global features à rajouter dans le data.frame.
 
 ## Vitesse
 trips_speeds = list(vector())
@@ -167,16 +172,71 @@ for (i in 1:nrow(info_trips))
   info_trips[i,12]=quantile(obj[[i]])[[4]]
   info_trips[i,13]=quantile(obj[[i]])[[2]]
   info_trips[i,14]=quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
+  info_trips[i,15]=skewness(obj[[i]])
+  info_trips[i,16]=kurtosis(obj[[i]])
+  info_trips[i,17]=sd(obj[[i]])/mean(obj[[i]])
+  obj=trips_accel
+  info_trips[i,18] = sum(obj[[i]])/length(obj[[i]])
+  info_trips[i,19]=sd (obj[[i]])
+  info_trips[i,20]=getmode(obj[[i]])
+  info_trips[i,21]=max((obj[[i]]))
+  info_trips[i,22]=max(obj[[i]][-which(obj[[i]]==info_trips[i,5])])
+  info_trips[i,23]=max(obj[[i]][-c(which(obj[[i]]==info_trips[i,5]),which(obj[[i]]==info_trips[i,6]))])
+  info_trips[i,24]=min((obj[[i]]))
+  info_trips[i,25]=min(obj[[i]][-which(obj[[i]]==info_trips[i,8])])
+  info_trips[i,26]=min(obj[[i]][-c(which(obj[[i]]==info_trips[i,8]),which(obj[[i]]==info_trips[i,9]))])
+  info_trips[i,27]=max((obj[[i]]))-min((obj[[i]]))
+  info_trips[i,28]=quantile(obj[[i]])[[4]]
+  info_trips[i,29]=quantile(obj[[i]])[[2]]
+  info_trips[i,30]=quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
+  info_trips[i,31]=skewness(obj[[i]])
+  info_trips[i,32]=kurtosis(obj[[i]])
+  info_trips[i,33]=sd(obj[[i]])/mean(obj[[i]])
+  obj=turnrate
+  info_trips[i,34] = sum(obj[[i]])/length(obj[[i]])
+  info_trips[i,35]=sd (obj[[i]])
+  info_trips[i,36]=getmode(obj[[i]])
+  info_trips[i,37]=max((obj[[i]]))
+  info_trips[i,38]=max(obj[[i]][-which(obj[[i]]==info_trips[i,5])])
+  info_trips[i,39]=max(obj[[i]][-c(which(obj[[i]]==info_trips[i,5]),which(obj[[i]]==info_trips[i,6]))])
+  info_trips[i,40]=min((obj[[i]]))
+  info_trips[i,41]=min(obj[[i]][-which(obj[[i]]==info_trips[i,8])])
+  info_trips[i,42]=min(obj[[i]][-c(which(obj[[i]]==info_trips[i,8]),which(obj[[i]]==info_trips[i,9]))])
+  info_trips[i,43]=max((obj[[i]]))-min((obj[[i]]))
+  info_trips[i,44]=quantile(obj[[i]])[[4]]
+  info_trips[i,45]=quantile(obj[[i]])[[2]]
+  info_trips[i,46]=quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
+  info_trips[i,47]=skewness(obj[[i]])
+  info_trips[i,48]=kurtosis(obj[[i]])
+  info_trips[i,49]=sd(obj[[i]])/mean(obj[[i]])
+  obj=sinuo
+  info_trips[i,50] = sum(obj[[i]])/length(obj[[i]])
+  info_trips[i,51]=sd (obj[[i]])
+  info_trips[i,52]=getmode(obj[[i]])
+  info_trips[i,53]=max((obj[[i]]))
+  info_trips[i,54]=max(obj[[i]][-which(obj[[i]]==info_trips[i,5])])
+  info_trips[i,55]=max(obj[[i]][-c(which(obj[[i]]==info_trips[i,5]),which(obj[[i]]==info_trips[i,6]))])
+  info_trips[i,56]=min((obj[[i]]))
+  info_trips[i,57]=min(obj[[i]][-which(obj[[i]]==info_trips[i,8])])
+  info_trips[i,58]=min(obj[[i]][-c(which(obj[[i]]==info_trips[i,8]),which(obj[[i]]==info_trips[i,9]))])
+  info_trips[i,59]=max((obj[[i]]))-min((obj[[i]]))
+  info_trips[i,60]=quantile(obj[[i]])[[4]]
+  info_trips[i,61]=quantile(obj[[i]])[[2]]
+  info_trips[i,62]=quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
+  info_trips[i,63]=skewness(obj[[i]])
+  info_trips[i,64]=kurtosis(obj[[i]])
+  info_trips[i,65]=sd(obj[[i]])/mean(obj[[i]])
+  }
   
   
   
   
   
-}
+
 
 
 plot(info_trips$id,info_trips$mean_speed)
-box = boxplot(info_trips$mean_speed)
+box = boxplot(info_trips$std_turn)
 summary(info_trips)
 
 info_trips = info_trips[-which(is.na(info_trips$mean_speed)),]
@@ -188,4 +248,9 @@ summary(info_trips)
 #ligne5_map=get_map(location=ligne5_part1,zoom=14)
 #ggmap(ligne5_map)
 #ggmap(ligne5_map)+ geom_point(data=trips[[128]], aes(x=trips[[128]]$lng,y=trips[[128]]$lat,shape=label,label=format(date, '%H:%M:%S')), col="red", size=0.5, pch=1)+geom_text(data = trips[[128]], aes(x = lng, y = lat, label = format(date, '%H:%M:%S')), size = 3, vjust = 0, hjust = -0.5) 
+
+
+####euclidienne *1.3 
+## new data 
+
 
