@@ -49,6 +49,33 @@ if(nrow(trips[[k]])<2)
  
 }
 trips=trips[-n]
+summary(trips)
+tripssplited<-list(data.frame())
+for(k in 1:length(trips))
+{ 
+  indice=vector()
+  indice=1
+  for(j in 1:(dim(trips[[k]])[1]-1))
+  {
+    if(trips[[k]][j,5]!=trips[[k]][j+1,5])
+    {
+      indice= c(indice,j)
+    }
+    
+  }
+  indice=c(indice,dim(trips[[k]])[1])
+  
+  tripssplited[[length(tripssplited)+1]]=trips[[k]][indice[1]:indice[2],]
+  if(length(indice) > 2)
+  {
+    for(i in 2:(length(indice)-1))
+    {
+      tripssplited[[length(tripssplited)+1]]=trips[[k]][(indice[i]+1):indice[i+1],]
+    }
+  }
+  
+}
+trips=tripssplited[-1]
 
 # Trips est maintenant une liste de 350 objet. Chaque objet étant un data.frame
 
@@ -59,11 +86,20 @@ trips=trips[-n]
 
 info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA, std_speed=NA, mode_speed=NA, top1_speed=NA,top2_speed=NA,top3_speed=NA, min1_speed=NA,min2_speed=NA,min3_speed=NA, range_speed=NA, upq_speed=NA,lowq_speed=NA, Intq_speed=NA,Skew_speed=NA,Kurtosis_speed=NA, Coefvar_speed=NA
                         , mean_accel=NA, std_accel=NA, mode_accel=NA, top1_accel=NA,top2_accel=NA,top3_accel=NA, min1_accel=NA,min2_speed=NA,min3_accel=NA, range_accel=NA, upq_accel=NA,lowq_accel=NA, Intq_accel=NA,Skew_accel=NA,Kurtosis_accel=NA, Coefvar_accel=NA
-                        , mean_turn=NA, std_turn=NA, mode_turn=NA, top1_turn=NA,top2_turn=NA,top3_turn=NA, min1_turn=NA,min2_turn=NA,min3_turn=NA, range_turn=NA, upq_turn=NA,lowq_turn=NA, Intq_turn=NA,Skew_turn=NA,Kurtosis_turn=NA, Coefvar_turn=NA
+                        , mean_turn=NA, std_turn=NA, mode_turn=NA, top1_turn=NA,top2_turn=NA,top3_turn=NA, min1_turn=NA,min2_turn=NA,min3_turn=NA, range_turn=NA, upq_turn=NA,lowq_turn=NA, Intq_turn=NA,Skew_turn=NA,Kurtosis_turn=NA, Coefvar_turn=NA,mode=NA
                         
                         )
 #autres global features à rajouter dans le data.frame.
+##Mode trip
 
+
+mode_trip=vector()
+for(t in trips)
+{
+ 
+mode_trip=c(mode_trip,as.numeric(t$mode)[1])
+  
+}
 ## Vitesse
 trips_speeds = list(vector())
 index = 0
@@ -244,8 +280,9 @@ for (i in 1:nrow(info_trips))
   info_trips[i,63]=skewness(obj[[i]])
   info_trips[i,64]=kurtosis(obj[[i]])
   info_trips[i,65]=sd(obj[[i]])/mean(obj[[i]])
-  }
   
+  }
+  info_trips$mode=mode_trip
   
   
   
@@ -260,7 +297,7 @@ summary(info_trips)
 info_trips = info_trips[-which(is.na(info_trips$mean_speed)),]
 summary(info_trips)
 
-
+trips
 #require(ggmap)
 #ligne5_part1=c(lat=49.41255914140619, lon=2.814817428588867)
 #ligne5_map=get_map(location=ligne5_part1,zoom=14)
@@ -270,5 +307,6 @@ summary(info_trips)
 
 ####euclidienne *1.3 
 ## new data 
+
 
 
