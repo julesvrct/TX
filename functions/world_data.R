@@ -1,10 +1,12 @@
 #Selection of Compi??gne's data only
 #JSON to CSV (to convert the string values to int values)
 library(jsonlite)
-data = fromJSON("data/dataset.json")
+data = fromJSON("data/position.json")
 data = sapply(data,rbind)
-head(data)
-write.csv(data, "data/mobilite_compiegne.csv")
+data2 = fromJSON("data/dataset.json")
+data2 = sapply(data2,rbind)
+
+write.csv(rbind(data,data2), "data/mobilite_compiegne.csv")
 
 #-------------------------------
 #Working with the csv file
