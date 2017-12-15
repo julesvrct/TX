@@ -44,8 +44,8 @@ n=vector()
 
 for (k in 1:length(trips))
 {
-if(nrow(trips[[k]])<2)
-  n=c(n,k)
+  if(nrow(trips[[k]])<2)
+    n=c(n,k)
  
 }
 trips=trips[-n]
@@ -77,6 +77,14 @@ for(k in 1:length(trips))
 }
 trips=tripssplited[-1]
 
+n_2=vector()
+for (k in 1:length(trips))
+{
+  if(nrow(trips[[k]])<2)
+    n_2=c(n_2,k)
+}
+trips=trips[-n_2]
+
 # Trips est maintenant une liste de 350 objet. Chaque objet étant un data.frame
 
 # A t'on vraiment besoin de créer un data.frame qui contient dans l'une de ses colonnes un data.frame de longueur différent pour chaque id de voyage ? 
@@ -84,11 +92,7 @@ trips=tripssplited[-1]
 
 ### GLOBAL FEATURES
 
-info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA, std_speed=NA, mode_speed=NA, top1_speed=NA,top2_speed=NA,top3_speed=NA, min1_speed=NA,min2_speed=NA,min3_speed=NA, range_speed=NA, upq_speed=NA,lowq_speed=NA, Intq_speed=NA,Skew_speed=NA,Kurtosis_speed=NA, Coefvar_speed=NA
-                        , mean_accel=NA, std_accel=NA, mode_accel=NA, top1_accel=NA,top2_accel=NA,top3_accel=NA, min1_accel=NA,min2_speed=NA,min3_accel=NA, range_accel=NA, upq_accel=NA,lowq_accel=NA, Intq_accel=NA,Skew_accel=NA,Kurtosis_accel=NA, Coefvar_accel=NA
-                        , mean_turn=NA, std_turn=NA, mode_turn=NA, top1_turn=NA,top2_turn=NA,top3_turn=NA, min1_turn=NA,min2_turn=NA,min3_turn=NA, range_turn=NA, upq_turn=NA,lowq_turn=NA, Intq_turn=NA,Skew_turn=NA,Kurtosis_turn=NA, Coefvar_turn=NA,mode=NA
-                        
-                        )
+
 #autres global features à rajouter dans le data.frame.
 ##Mode trip
 
@@ -97,7 +101,7 @@ mode_trip=vector()
 for(t in trips)
 {
  
-mode_trip=c(mode_trip,as.numeric(t$mode)[1])
+  mode_trip=c(mode_trip,as.numeric(t$mode)[1])
   
 }
 ## Vitesse
@@ -112,26 +116,36 @@ for (t in trips)
   for (i in 1:(length(t$id)-1))
   {
     
-  if(is.null(vitesse_UTM(t[i,],t[i+1,]))  ) 
-  {
-    trips[[index]]=trips[[index]][-i,]
-  }
-  else if(dim(t)[1]<2)
-  {
-    trips[[index]]=trips[[index]][-i,]
-  }
-  else if((!is.na(vitesse_UTM(t[i,],t[i+1,])) && vitesse_UTM(t[i,],t[i+1,]) >120 ))
-  {
-    trips[[index]]=trips[[index]][-i,]
-  }
-  else
-  {
-    v = c(v,vitesse_UTM(t[i,],t[i+1,]))
-  } 
+    if(is.null(vitesse_UTM(t[i,],t[i+1,]))  ) 
+    {
+      trips[[index]]=trips[[index]][-i,]
+    }
+    else if(dim(t)[1]<2)
+    {
+      trips[[index]]=trips[[index]][-i,]
+    }
+    else if((!is.na(vitesse_UTM(t[i,],t[i+1,])) && vitesse_UTM(t[i,],t[i+1,]) >120 ))
+    {
+      trips[[index]]=trips[[index]][-i,]
+    }
+    else
+    {
+      v = c(v,vitesse_UTM(t[i,],t[i+1,]))
+    } 
   }
   
   trips_speeds[[index]] = v
 } 
+
+n_2=vector()
+for (k in 1:length(trips_speeds))
+{
+  if(length(trips_speeds[[k]])<2)
+    n_2=c(n_2,k)
+}
+trips_speeds=trips_speeds[-n_2]
+trips = trips[-n_2]
+mode_trip = mode_trip[-n_2]
 
 
 ##Accceleration
@@ -157,6 +171,17 @@ for (t in trips)
   
 }
 
+n_2=vector()
+for (k in 1:length(trips_accel))
+{
+  if(length(trips_accel[[k]])<2)
+    n_2=c(n_2,k)
+}
+trips_accel=trips_accel[-n_2]
+trips = trips[-n_2]
+trips_speeds = trips_speeds[-n_2]
+mode_trip = mode_trip[-n_2]
+
 ##Turn angle 
 course=list(vector())
 turnrate=list(vector())
@@ -180,9 +205,8 @@ for (t in trips) {
   b[is.na(b)]<-0
   turnrate[[index]]=b
 }
+
 ### Distance / Distance la plus courte
-
-
 sinuo=vector()
 dist=list(vector())
 index=0
@@ -201,78 +225,168 @@ for (t in trips) {
   if(m==0)
     sinuo[index]=0
   else if(sqrt((trips[[index]]$X[m]-trips[[index]]$X[1])^2+(trips[[index]]$Y[m]-trips[[index]]$Y[1])^2)!=0)
-  sinuo[index]=sum(dist[[index]])/(1.3*sqrt((trips[[index]]$X[m]-trips[[index]]$X[1])^2+(trips[[index]]$Y[m]-trips[[index]]$Y[1])^2))
+    sinuo[index]=sum(dist[[index]])/(1.3*sqrt((trips[[index]]$X[m]-trips[[index]]$X[1])^2+(trips[[index]]$Y[m]-trips[[index]]$Y[1])^2))
   else 
     sinuo[index]=0
 }
 
-getmode <- function(v) {
+
+getmode <- function(v) 
+{
   uniqv <- unique(v)
   uniqv[which.max(tabulate(match(v, uniqv)))]
 }
 
+
+
+info_trips = data.frame(id=c(1:length(trips)), mean_speed=NA, std_speed=NA, mode_speed=NA, top1_speed=NA,top2_speed=NA,top3_speed=NA, min1_speed=NA,min2_speed=NA,min3_speed=NA, range_speed=NA, upq_speed=NA,lowq_speed=NA, Intq_speed=NA,Skew_speed=NA,Kurtosis_speed=NA, Coefvar_speed=NA
+                        , mean_accel=NA, std_accel=NA, mode_accel=NA, top1_accel=NA,top2_accel=NA,top3_accel=NA, min1_accel=NA,min2_speed=NA,min3_accel=NA, range_accel=NA, upq_accel=NA,lowq_accel=NA, Intq_accel=NA,Skew_accel=NA,Kurtosis_accel=NA, Coefvar_accel=NA
+                        , mean_turn=NA, std_turn=NA, mode_turn=NA, top1_turn=NA,top2_turn=NA,top3_turn=NA, min1_turn=NA,min2_turn=NA,min3_turn=NA, range_turn=NA, upq_turn=NA,lowq_turn=NA, Intq_turn=NA,Skew_turn=NA,Kurtosis_turn=NA, Coefvar_turn=NA,mode=NA
+)
+
+
+
 for (i in 1:nrow(info_trips))
-{ obj=trips_speeds
+{ 
+  obj=trips_speeds
   info_trips[i,2] = sum(obj[[i]])/length(obj[[i]])
-  info_trips[i,3]=sd (obj[[i]])
-  info_trips[i,4]=getmode(obj[[i]])
-  info_trips[i,5]=max((obj[[i]]))
-  info_trips[i,6]=max(obj[[i]][-which(obj[[i]]==info_trips[i,5])])
-  info_trips[i,7]=max(obj[[i]][-c(which(obj[[i]]==info_trips[i,5]),which(obj[[i]]==info_trips[i,6]))])
-  info_trips[i,8]=min((obj[[i]]))
-  info_trips[i,9]=min(obj[[i]][-which(obj[[i]]==info_trips[i,8])])
-  info_trips[i,10]=min(obj[[i]][-c(which(obj[[i]]==info_trips[i,8]),which(obj[[i]]==info_trips[i,9]))])
-  info_trips[i,11]=max((obj[[i]]))-min((obj[[i]]))
-  info_trips[i,12]=quantile(obj[[i]])[[4]]
-  info_trips[i,13]=quantile(obj[[i]])[[2]]
-  info_trips[i,14]=quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
-  info_trips[i,15]=skewness(obj[[i]])
-  info_trips[i,16]=kurtosis(obj[[i]])
-  info_trips[i,17]=sd(obj[[i]])/mean(obj[[i]])
+  info_trips[i,3]= sd(obj[[i]])
+  info_trips[i,4]= getmode(obj[[i]])
+  info_trips[i,5]= max((obj[[i]]))
+  x = obj[[i]]
+  n <- length(x)
+  info_trips[i,6]= sort(x,partial=n-1)[n-1]
+  if (length(obj[[i]]) > 2)
+  {
+    info_trips[i,7] = sort(x,partial=n-2)[n-2]
+  }
+  else
+  {
+    info_trips[i,7] = info_trips[i,6]
+  }
+  info_trips[i,8]= min((obj[[i]]))
+  info_trips[i,9]= sort(x,partial=2)[2]
+  if (length(obj[[i]]) > 2)
+  {
+    info_trips[i,10] = sort(x,partial=3)[3]
+  }
+  else
+  {
+    info_trips[i,10] = info_trips[i,9]
+  }
+  info_trips[i,11]= max((obj[[i]]))-min((obj[[i]]))
+  info_trips[i,12]= quantile(obj[[i]])[[4]]
+  info_trips[i,13]= quantile(obj[[i]])[[2]]
+  info_trips[i,14]= quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
+  info_trips[i,15]= skewness(obj[[i]])
+  info_trips[i,16]= kurtosis(obj[[i]])
+  info_trips[i,17]= sd(obj[[i]])/mean(obj[[i]])
+}
+
+
+for (i in 1:nrow(info_trips))
+{   
   obj=trips_accel
+  x = obj[[i]]
+  n <- length(x)
   info_trips[i,18] = sum(obj[[i]])/length(obj[[i]])
-  info_trips[i,19]=sd (obj[[i]])
-  info_trips[i,20]=getmode(obj[[i]])
-  info_trips[i,21]=max((obj[[i]]))
-  info_trips[i,22]=max(obj[[i]][-which(obj[[i]]==info_trips[i,5])])
-  info_trips[i,23]=max(obj[[i]][-c(which(obj[[i]]==info_trips[i,5]),which(obj[[i]]==info_trips[i,6]))])
-  info_trips[i,24]=min((obj[[i]]))
-  info_trips[i,25]=min(obj[[i]][-which(obj[[i]]==info_trips[i,8])])
-  info_trips[i,26]=min(obj[[i]][-c(which(obj[[i]]==info_trips[i,8]),which(obj[[i]]==info_trips[i,9]))])
-  info_trips[i,27]=max((obj[[i]]))-min((obj[[i]]))
-  info_trips[i,28]=quantile(obj[[i]])[[4]]
-  info_trips[i,29]=quantile(obj[[i]])[[2]]
-  info_trips[i,30]=quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
-  info_trips[i,31]=skewness(obj[[i]])
-  info_trips[i,32]=kurtosis(obj[[i]])
-  info_trips[i,33]=sd(obj[[i]])/mean(obj[[i]])
+  info_trips[i,19]= sd(obj[[i]])
+  info_trips[i,20]= getmode(obj[[i]]) #ne fonctionne pas
+  info_trips[i,21]= max((obj[[i]]))
+  info_trips[i,22]= sort(x,partial=n-1)[n-1]
+  if (length(obj[[i]]) > 2)
+  {
+    info_trips[i,23]= sort(x,partial=n-2)[n-2]
+  }
+  else
+  {
+    info_trips[i,23] = info_trips[i,22]
+  }
+  info_trips[i,24]= min((obj[[i]]))
+  info_trips[i,25]= sort(x,partial=2)[2]
+  if (length(obj[[i]]) > 2)
+  {
+    info_trips[i,26]= sort(x,partial=3)[3]
+  }
+  else
+  {
+    info_trips[i,26] = info_trips[i,25]
+  }
+  info_trips[i,27]= max((obj[[i]]))-min((obj[[i]]))
+  info_trips[i,28]= quantile(obj[[i]])[[4]]
+  info_trips[i,29]= quantile(obj[[i]])[[2]]
+  info_trips[i,30]= quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
+  info_trips[i,31]= skewness(obj[[i]])
+  info_trips[i,32]= kurtosis(obj[[i]])
+  info_trips[i,33]= sd(obj[[i]])/mean(obj[[i]])
+}
+
+
+for (i in 1:nrow(info_trips))
+{
   obj=turnrate
+  x = obj[[i]]
+  n <- length(x)
   info_trips[i,34] = sum(obj[[i]])/length(obj[[i]])
-  info_trips[i,35]=sd (obj[[i]])
-  info_trips[i,36]=getmode(obj[[i]])
-  info_trips[i,37]=max((obj[[i]]))
-  info_trips[i,38]=max(obj[[i]][-which(obj[[i]]==info_trips[i,5])])
-  info_trips[i,39]=max(obj[[i]][-c(which(obj[[i]]==info_trips[i,5]),which(obj[[i]]==info_trips[i,6]))])
-  info_trips[i,40]=min((obj[[i]]))
-  info_trips[i,41]=min(obj[[i]][-which(obj[[i]]==info_trips[i,8])])
-  info_trips[i,42]=min(obj[[i]][-c(which(obj[[i]]==info_trips[i,8]),which(obj[[i]]==info_trips[i,9]))])
-  info_trips[i,43]=max((obj[[i]]))-min((obj[[i]]))
-  info_trips[i,44]=quantile(obj[[i]])[[4]]
-  info_trips[i,45]=quantile(obj[[i]])[[2]]
-  info_trips[i,46]=quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
-  info_trips[i,47]=skewness(obj[[i]])
-  info_trips[i,48]=kurtosis(obj[[i]])
-  info_trips[i,49]=sd(obj[[i]])/mean(obj[[i]])
+  info_trips[i,35]= sd (obj[[i]])
+  info_trips[i,36]= getmode(obj[[i]])
+  info_trips[i,37]= max((obj[[i]]))
+  info_trips[i,38]= sort(x,partial=n-1)[n-1]
+  if (length(obj[[i]]) > 2)
+  {
+    info_trips[i,39]= sort(x,partial=n-2)[n-2]
+  }
+  else
+  {
+    info_trips[i,39] = info_trips[i,38]
+  }
+  info_trips[i,40]= min((obj[[i]]))
+  info_trips[i,41]= sort(x,partial=2)[2]
+  if (length(obj[[i]]) > 2)
+  {
+    info_trips[i,42]= sort(x,partial=3)[3]
+  }
+  else
+  {
+    info_trips[i,42] = info_trips[i,41]
+  }
+  info_trips[i,43]= max((obj[[i]]))-min((obj[[i]]))
+  info_trips[i,44]= quantile(obj[[i]])[[4]]
+  info_trips[i,45]= quantile(obj[[i]])[[2]]
+  info_trips[i,46]= quantile(obj[[i]])[[4]]-quantile(obj[[i]])[[2]]
+  info_trips[i,47]= skewness(obj[[i]])
+  info_trips[i,48]= kurtosis(obj[[i]])
+  info_trips[i,49]= sd(obj[[i]])/mean(obj[[i]])
+}
+
+for (i in 1:nrow(info_trips))
+{
   obj=sinuo
+  x = obj[[i]]
+  n <- length(x)
   info_trips[i,50] = sum(obj[[i]])/length(obj[[i]])
-  info_trips[i,51]=sd (obj[[i]])
-  info_trips[i,52]=getmode(obj[[i]])
-  info_trips[i,53]=max((obj[[i]]))
-  info_trips[i,54]=max(obj[[i]][-which(obj[[i]]==info_trips[i,5])])
-  info_trips[i,55]=max(obj[[i]][-c(which(obj[[i]]==info_trips[i,5]),which(obj[[i]]==info_trips[i,6]))])
-  info_trips[i,56]=min((obj[[i]]))
-  info_trips[i,57]=min(obj[[i]][-which(obj[[i]]==info_trips[i,8])])
-  info_trips[i,58]=min(obj[[i]][-c(which(obj[[i]]==info_trips[i,8]),which(obj[[i]]==info_trips[i,9]))])
+  info_trips[i,51] = sd(obj[[i]])
+  info_trips[i,52] = getmode(obj[[i]])
+  info_trips[i,53] = max((obj[[i]]))
+  info_trips[i,54] = sort(x,partial=n-1)[n-1]
+  if (length(obj[[i]]) > 2)
+  {
+    info_trips[i,55] = sort(x,partial=n-2)[n-2]
+  }
+  else
+  {
+    info_trips[i,55] = info_trips[i,54]
+  }
+  info_trips[i,56] = min((obj[[i]]))
+  info_trips[i,57] = sort(x,partial=2)[2]
+  if (length(obj[[i]]) > 2)
+  {
+    info_trips[i,58] = sort(x,partial=3)[3]
+  }
+  else
+  {
+    info_trips[i,58] = info_trips[i,57]
+  }
   info_trips[i,59]=max((obj[[i]]))-min((obj[[i]]))
   info_trips[i,60]=quantile(obj[[i]])[[4]]
   info_trips[i,61]=quantile(obj[[i]])[[2]]
@@ -280,14 +394,10 @@ for (i in 1:nrow(info_trips))
   info_trips[i,63]=skewness(obj[[i]])
   info_trips[i,64]=kurtosis(obj[[i]])
   info_trips[i,65]=sd(obj[[i]])/mean(obj[[i]])
+}
   
-  }
-  info_trips$mode=mode_trip
+info_trips$mode=mode_trip
   
-  
-  
-  
-
 
 
 plot(info_trips$id,info_trips$mean_speed)

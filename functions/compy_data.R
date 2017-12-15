@@ -1,7 +1,7 @@
 #Selection of Compi??gne's data only
 #JSON to CSV (to convert the string values to int values)
 library(jsonlite)
-data = fromJSON("data/dataset.json")
+data = fromJSON("/Users/julesvercoustre/Documents/UTC/TX/TX/data/dataset.json")
 data = sapply(data,rbind)
 head(data)
 write.csv(data, "data/mobilite_compiegne.csv")
