@@ -397,26 +397,15 @@ for (i in 1:nrow(info_trips))
 }
   
 info_trips$mode=mode_trip
-  
-
 
 plot(info_trips$id,info_trips$mean_speed)
 box = boxplot(info_trips$mean_speed)
 summary(info_trips)
 
-info_trips = info_trips[-which(is.na(info_trips$mean_speed)),]
-summary(info_trips)
-
-trips
+#info_trips = info_trips[-which(is.na(info_trips$mean_speed)),]
+#trips
 #require(ggmap)
 #ligne5_part1=c(lat=49.41255914140619, lon=2.814817428588867)
 #ligne5_map=get_map(location=ligne5_part1,zoom=14)
 #ggmap(ligne5_map)
 #ggmap(ligne5_map)+ geom_point(data=trips[[128]], aes(x=trips[[128]]$lng,y=trips[[128]]$lat,shape=label,label=format(date, '%H:%M:%S')), col="red", size=0.5, pch=1)+geom_text(data = trips[[128]], aes(x = lng, y = lat, label = format(date, '%H:%M:%S')), size = 3, vjust = 0, hjust = -0.5) 
-
-
-####euclidienne *1.3 
-## new data 
-
-
-
