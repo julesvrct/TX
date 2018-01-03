@@ -19,7 +19,7 @@ fitControl <- trainControl(
   method = "repeatedcv",
   number = 5, #10
   ## repeated 
-  repeats = 1) #10
+  repeats = 3) #10
 
 ##########  Random forest
 
