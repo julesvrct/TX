@@ -31,27 +31,36 @@ userspattern[[k]]$speed=0
 }
 user=86
 
-v=which(userspattern[[user]]$speed<Vlim)
-vs=split(v, cumsum(c(1, diff(v) != 1)))
 
 
+# function point of interest
 
-pointofinterest=data.frame(id=NA,lat=NA,lng=NA,diff=NA)
-index=0
-for(i in 1:length(vs))
-{
-if(sum(userspattern[[user]][vs[[i]],]$diff)>Tlim)
-{ index=index+1
-  pointofinterest[index,1]=as.character(userspattern[[user]]$id[1])
-  pointofinterest[index,2]=(mean(userspattern[[user]][vs[[i]],]$lat))
-  pointofinterest[index,3]=(mean(userspattern[[user]][vs[[i]],]$lng))
-  pointofinterest[index,4]=(sum(userspattern[[user]][vs[[i]],]$diff))
 
-}
-}
+pattern <- function(user,Tlim,Vlim) 
+  {
+        v=which(userspattern[[user]]$speed<Vlim)
+        vs=split(v, cumsum(c(1, diff(v) != 1)))
+        
+        pointofinterest=data.frame(id=NA,lat=NA,lng=NA,diff=NA)
+        index=0
+        for(i in 1:length(vs))
+        {
+        if(sum(userspattern[[user]][vs[[i]],]$diff)>Tlim)
+        { index=index+1
+          pointofinterest[index,1]=as.character(userspattern[[user]]$id[1])
+          pointofinterest[index,2]=(mean(userspattern[[user]][vs[[i]],]$lat))
+          pointofinterest[index,3]=(mean(userspattern[[user]][vs[[i]],]$lng))
+          pointofinterest[index,4]=(sum(userspattern[[user]][vs[[i]],]$diff))
+        
+        }
+        }
+        
+        obj=dbscan(as.matrix(pointofinterest[,c(2,3)]), 0.01, minPts = 5,weights =pointofinterest[,4] )
+        plot(pointofinterest[,c(2,3)], col=obj$cluster)
+        
+        hullplot(pointofinterest[,c(2,3)], obj)
+        obj$cluster
+        return (pointofinterest)
+    }
 
-obj=dbscan(as.matrix(pointofinterest[,c(2,3)]), 0.01, minPts = 5,weights =pointofinterest[,4] )
-plot(pointofinterest[,c(2,3)], col=obj$cluster)
-
-hullplot(pointofinterest[,c(2,3)], obj)
-obj$cluster
+pattern(user,Tlim,Vlim)
