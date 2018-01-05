@@ -1,16 +1,26 @@
-#Selection of Compi??gne's data only
+####################################
+#PREAMBULE
+#---
+#This script allows to collect data from json and build a whole dataframe
+#which will be used for classifications
+####################################
+
+#Selection of world data
 #JSON to CSV (to convert the string values to int values)
+#Here we combine two json files. One can change the data to load by remplacing values 
+#and removing the "bind" function that help to combine our two json files.
 library(jsonlite)
 data = fromJSON("data/position.json")
 data = sapply(data,rbind)
 data2 = fromJSON("data/dataset.json")
 data2 = sapply(data2,rbind)
 
-write.csv(rbind(data,data2), "data/mobilite_compiegne.csv")
+write.csv(rbind(data,data2), "data/world_data.csv")
+
 
 #-------------------------------
 #Working with the csv file
-dataset <- read.csv("data/mobilite_compiegne.csv", na.strings="", header=T)
+dataset <- read.csv("data/world_data.csv", na.strings="", header=T)
 head(dataset)
 dataset <- dataset[,-1]
 head(dataset)
@@ -60,5 +70,3 @@ world_data = mobility
 world_data = unique(setDT(world_data), by = c("id", "date"))
 
 world_data=as.data.frame(world_data)
-
-
