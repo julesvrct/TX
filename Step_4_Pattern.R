@@ -2,7 +2,7 @@
 #PREAMBULE
 #---
 #This script is used for finding patterns in data
-#At the end of teh script there is a function that can be used for all kind of users and whoch finds patterns
+#At the end of the script there is a function that can be used for all kind of users and whoch finds patterns
 ####################################
 
 load("data/environment.RData")
