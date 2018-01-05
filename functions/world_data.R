@@ -55,7 +55,7 @@ mobility <- data.frame(id,date,lat,lng,mode,transportation_mode)
 #-------------------------------
 
 library(data.table)
-#We now want to select the data from Compiegne's area
+#We now want to select the data from world's area
 world_data = mobility
 world_data = unique(setDT(world_data), by = c("id", "date"))
 

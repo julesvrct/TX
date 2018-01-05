@@ -1,0 +1,516 @@
+% !TEX encoding = IsoLatin
+%\documentclass[twoside]{article}
+\documentclass{article}
+\usepackage[francais]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{bbm}
+\usepackage{epsfig}
+\usepackage{caption}
+
+
+\usepackage[hmarginratio=1:1,top=32mm, bottom=20mm, columnsep=20pt]{geometry}
+\usepackage{multirow}
+\usepackage{abstract} % Customization de l'abstract 
+\usepackage{fancyhdr} % en-têtes et pieds de page 
+\usepackage{float} % Nécessaire pour les tables et figures dans l'environnement double colonne 
+
+\usepackage{hyperref} % hyperliens 
+\usepackage{sectsty}
+\usepackage{lipsum}
+\usepackage{etoolbox}
+\usepackage{listings}
+\makeatletter
+\patchcmd{\chapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}
+\makeatother
+
+
+
+
+
+% En-têtes et pieds de page 
+\pagestyle{fancy}  
+\fancyhead{} % Blank out the default header
+\fancyfoot{} % Blank out the default footer
+\fancyhead[C]{TX - Mobilité Dynamique} % Custom header text
+\fancyfoot[RO,LE]{\thepage} % Custom footer text
+
+%\setlength{\parskip}{1ex} % espace entre paragraphes 
+
+\newcommand{\bsx}{\boldsymbol{x}}
+\newcommand{\transp}{^{\mathrm{t}}}
+
+
+%----------------------------------------------------------------------------------------
+
+\title{\vspace*{\fill}\textbf{TX\\Mobilité Dynamique:} \\ Analyse de données, classification et prédiction \vspace*{\fill}}
+
+\author{Sofiane Lamrous \& Jules Vercoustre}
+\date{\today}
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Insert title
+\thispagestyle{fancy}
+
+\newpage
+\vspace*{\fill}
+\section*{Contexte}
+
+Le developement des smartphones ces dernières années a donné accès à une multitude de possibilités. Aujourd'hui il est simple de suivre les deplacements de chacun grace aux données GPS collectées par les smartphones. Mobilité Dynamique est une application developpé dans ce sens, elle permet a ses utilisateurs d'avoir un suivi de leurs deplacements mais surtout de contribuer à la recolte de donner GPS dans un but de recherche et d'exploration pour ameliorer les reseaux de transport locaux.
+Les données GPS peuvent d'etre exploitées de differentes manières et peuvent contibuer à la réalisation de nombreux projets. Dans le cadre de notre TX nous nous sommes penché sur la problematique de reconnaissance du mode de transport puis de manière plus specifique à la reconnaissance des lignes de bus pour les deplacement en bus. Dans la dernière partie nous avons traité le sujet de pattern et de periodicité des voyages nous avons identifier pour chaque utilisateurs leur lieux d'interet c'est à dire les lieux les plus frequentés pour comprendre leurs habitudes de transport.
+
+
+\vspace*{\fill}
+
+
+\newpage
+
+
+
+%----------------------------------------------------------------------------------------
+
+\tableofcontents
+
+
+\newpage
+
+\section{Reconnaissance des ligne des bus}
+
+\subsection{Analyse statique du jeu de données "Mobilité Dynamique"}
+
+De prime abord, nous avons décidé d'analyser un jeu de données au format json issu de l'application. La taille du jeu de données correspond à des enregistrements sur quelques mois en 2017. Etant donné que nous utiliserons par la suite le logiciel R il a d'abord fallu convertir les données en un data frame tel que ci-dessous:
+
+\begin{table}[ht]
+\centering
+\captionsetup{justification=centering}
+    \caption{Jeu de données}
+\begin{tabular}{rrrrrrr}
+  \hline
+ & id & date & lat & lng & mode & mode\_str\\ 
+  \hline
+1 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:44:42 & 49.42239 & 2.820488 & 3 & Still  \\
+2 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:48:27 & 49.42220 & 2.819472 & 3 & Still \\
+3 & 59046be7c9e77c0001b582e4 & 2017-07-16 14:32:45 & 49.42217 & 2.820005  &  9  & Entering Geofence \\
+   
+\end{tabular}
+\end{table}
+
+Sachant que:
+\begin{itemize}
+    \item \textit{id}, l'id unique des utilisateurs
+    \item \textit{date}, la date de l'enregistrement
+    \item \textit{lat} & \textit{lng}, les coordonnées géographiques, respectivement latitude et longitude.
+    \item \textit{mode}, le mode de transport utilisé:
+        \begin{itemize}
+            \item 0, on a vehicle
+            \item 1, biking
+            \item 2, on foot
+            \item 3, still
+            \item 4, unclassified
+            \item 5, tilting
+            \item 7, fast walk
+            \item 8, run
+            \item 9, entering a geofence (that is a location where the user is remaining for at least 20 minutes)
+            \item 10, exiting from a geofence (that is transport begins)
+            \item 11, tracking service started
+            \item 12, tracking service stopped\\
+        \end{itemize}
+\end{itemize}
+
+Afin de visualiser l'exactitude des coordonnées géographiques enregistrées nous avons représenté dans l'espace les différents enregistrements :
+
+\begin{figure}[!h]
+  \centering\epsfig{figure=turin.png,width=8cm}
+ \captionsetup{justification=centering}
+    \caption{Visualisation des données de Turin}
+\end{figure}
+
+Il vient donc que les coordonnées sont très précises (nombre de décimales très élevés). Cependant cette précision accrue pose un problème majeur. En effet, lorsque qu'à lieu un enregistrement celui-ci n'est pas forcèment la position "réelle" de l'utilisateur. Ainsi, la marge d'erreur entre le point réel et le point enregistré peut varier de 0 à plusieurs dizaines de mètres. C'est une problématique à prendre en compte lors de la classification d'un point sur une ligne de bus ou non.
+
+
+
+\subsection{Récupération des données des lignes de bus}
+
+Afin de déterminer un classifieur permettant de déterminer si un point enregistré est ou non sur une ligne de bus il est nécessaire d'avoir les données GPS des lignes de bus (en loccurence celles de Compiègne).
+Cette partie a été délicate et fastidieuse. En effet, il nous fallait un nombre d'enregistrements conséquent  et très précis pour pouvoir ensuite utiliser cette base de points pour un classifieur.
+Nous avons réussi à obtenir ces points en nous basant sur le site web Compibus qui scrape les données via une API dédiée.
+Obtenir les données nous a pris du temps mais nous sommes finalement parvenus à obtenir le tracé exact de toutes les lignes de bus de Compiègne (format json).
+
+\begin{figure}[!h]
+  \centering\epsfig{figure=full_line5.jpeg,width=10cm}
+ \captionsetup{justification=centering}
+    \caption{Ligne 5}
+\end{figure}
+
+
+
+\subsubsection{Classifieur euclidien de la ligne de bus}
+
+Un pan de notre projet consistait à déterminer si un enregistrement se situe ou non sur l'une des lignes de bus de Compiègne.
+Nous avons donc choisi de constuire un classifieur euclidien qui fait cela.
+Le principe du classifieur est le suivant:
+\begin{itemize}
+    \item Une droite est tout d'abord tracée entre deux points de la ligne de bus : \textit{$(x_{i},y_{i})$ et $(x_{i+1},y_{i+1})$}
+    \item Ensuite un intervalle de confiance est construit. Celui-ci est composé de deux droites parallèles à la droite précédement tracée et distantes d'une valeur delta $ \delta=d$ de cette même droite. Ces droites ont pour équation $d_{1}=ax+b+d$ et $d_{2}=ax+b-d$. On notera que $d$ est un paramètre réglable.
+    \item Enfin deux dernières droites viennent entrecouper les droites $d_{1}$ et $d_{2}$ pour former au final un parallélogramme qui constitue la zone au sein de laquelle on considère qu'un point se situe sur la ligne.
+\end{itemize}
+
+
+\begin{figure}[!h]
+  \centering\epsfig{figure=euclidian_model.png,width=10cm}
+ \captionsetup{justification=centering}
+    \caption{Principe classifieur euclidien}
+\end{figure}
+
+\begin{figure}[!h]
+  \centering\epsfig{figure=classifier_example.png,width=10cm}
+ \captionsetup{justification=centering}
+    \caption{Exemple classifieur euclidien sur la ligne 5}
+\end{figure}
+
+\subsection{Conlusion sur la reconnaissance des lignes de bus}
+
+Nous avons réussi à déterminer un classifieur euclidien permettant de déterminer les points appartenant ou non à une ligne de bus. Ce classifieur pourra être par le futur être améliorer en retournant les utilisateurs auxquels appartiennent les points. Cela permettra par la suite d'informer les usagers (de l'application) sur leur trajets quotidiens ou récurrents et sur la possibilité d'emprunter une ligne de bus adaptée à leur besoins. Tout ceci dans une démarche éco-responsable qui s'intégre dans une problématique de mobilité intelligente.
+
+\newpage
+
+\section{Reconnaissance des modes de transport}
+
+Dans ce rapport, nous proposons une méthode pour identifier au mieux 4 modes de transports incluant la marche, le vélo, la voiture et le bus, le tout en utilisant les données GPS.\\
+
+Les principales étapes de la méthode pour l'identification des modes de transport sont :
+\begin{itemize}
+    \item Nettoyage des données
+    \item Extraction de nouvelles variables explicatives
+    \item Modèle de classification 
+    \item Evaluation du modèle\\
+\end{itemize}
+
+Les données GPS brutes sont tout d'abord regroupés par utilisateurs puis mises en relation pour ensuite être découpés en trajets ("trips"). Ensuite des variables explicatives (prédicteurs) sont extraites des données GPS avant d'utiliser la méthode qui classifiera nos trajets en fonction des modes transport.\\
+
+De la méthode on obtient ensuite des variables plus importantes et consistantes que certaines. On procède donc à l'élimination des variables non pertinentes.\\
+
+Chacunes des étapes est décrite dans cette section.
+
+\subsection{Nettoyage des données}
+
+
+De prime abord, pour de meilleur performances, 2 techniques de nettoyage des données ont été utilisé dans ce projet. 
+D'abord nous avons enlevé les duplicats dans le jeu de données. En effet, des points GPS sont parfois enregistrés plus qu'une fois du fait d'erreurs d'enregistrement sur l'appareil GPS. 
+Aussi, nous avons supprimé les trajectoires de type "outlier" qui dévient anormalement.
+Par exemple si la vitesse moyenne d'une trajectoire marqué "Marche" excède 10 m/s alors elle est marqué comme aberrante et retiré du jeu de données.\\
+
+Ensuite, nous avons décidé que les prédictions se ferait sur des "voyages" (aussi appelé "trips" dans ce rapport). Ainsi nous avons splité le jeu de données initial en $n$ voyages. Chaque utilisateur $x_{i}$ a un total de $m$ voyages. La somme des $x_{i}^{m}$ (i variant de 1 à $U$, $U$ étant le nombre d'utilisateurs) nous donne donc $n$.\\
+
+Chaque voyage/trip est composé de $e$ enregistrements de la façon suivante:
+\begin{itemize}
+    \item Un enregistrement de type "entering a geofence" (mode = 9) qui initie le voyage ($x_{i}^{1}$)
+    \item Un nombre variable $dots$ ($dots > 2$ en raison des calculs de vitesse, d'accélération, etc) d'enregistrements avec des modes de transports différents ou non (mais différents de 9 et de 10).
+    \item Un enregistrement type "exiting a geofence" (mode = 10) qui indique la fin du voyage ($x_{i}^{e}$).\\
+\end{itemize}
+
+Avec cette nouvelle structure de données nous nous sommes retrouvés avec des voyages où le mode utilisé est "Still" (mode=3). C'est à dire que l'usager n'est pas en mouvement. Or cette classe ne sera pas utilisé par notre futur classifieur. En effet on cherche à prédire des modes de transport et non l'absence de mouvement. On supprime donc tous les voyages de ce type.
+
+Enfin par la suite nous avons décidé de limiter chaque voyage à un seul type de mode de transport. Ainsi nous avons déterminé des "sous-voyages" parmis les "voyages".\\ 
+
+Exemple de voyage:
+
+\begin{table}[H]
+\centering
+\captionsetup{justification=centering}
+    \caption{Jeu de données}
+\begin{tabular}{rrrrrrr}
+  \hline
+ & id & date & lat & lng & mode & mode\_str\\ 
+  \hline
+0 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:44:42 & 49.42239 & 2.820488 & 9 & Entering Geofence \\
+1 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:44:42 & 49.42239 & 2.820488 & 2 & On foot  \\
+2 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:48:27 & 49.42220 & 2.819472 & 2 & On foot \\
+3 & 59046be7c9e77c0001b582e4 & 2017-07-16 14:32:45 & 49.42217 & 2.820005  & 2 & On foot \\
+4 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:48:27 & 49.98620 & 2.564743 & 0 & Vehicule \\
+5 & 59046be7c9e77c0001b582e4 & 2017-07-16 14:32:45 & 49.97867 & 2.874832  & 0 & Vehicule \\
+6 & 59046be7c9e77c0001b582e4 & 2017-07-16 14:32:45 & 49.97233 & 2.876232  & 10 & Exiting geofence \\
+   
+\end{tabular}
+\end{table}
+
+Exemple de sous-voyage:
+
+\begin{table}[H]
+\centering
+\captionsetup{justification=centering}
+    \caption{Jeu de données}
+\begin{tabular}{rrrrrrr}
+  \hline
+ & id & date & lat & lng & mode & mode\_str\\ 
+  \hline
+0 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:44:42 & 49.42239 & 2.820488 & 9 & Entering Geofence \\
+1 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:44:42 & 49.42239 & 2.820488 & 2 & On foot  \\
+2 & 59046be7c9e77c0001b582e4 & 2017-07-16 13:48:27 & 49.42220 & 2.819472 & 2 & On foot \\
+3 & 59046be7c9e77c0001b582e4 & 2017-07-16 14:32:45 & 49.42217 & 2.820005  & 2 & On foot \\
+4 & 59046be7c9e77c0001b582e4 & 2017-07-16 14:32:45 & 49.97233 & 2.876232  & 10 & Exiting geofence \\
+   
+\end{tabular}
+\end{table}
+
+
+
+\subsection{Extraction de nouvelles variables explicatives}
+
+L'extraction de variables explicatives joue un role important dans la reconnaissance des modes de transports.
+Nous utilisons donc nos connaissance dans le domaine des transports pour créer des variables consistantes dans un contexte d'apprentissage automatique. L'apprentissage automatique doit marcher le mieux possible et ainsi présenter des résultats robuste avec un faible taux d'erreur pour la reconnaissances des différents modes de transport. On décide donc de créer le plus de variables possible pour un choix final de variables plus travaillé. 
+
+Les variables explicatives font référence aux statistiques descriptives pour la trajectoire complète. Ce qui rend chaque trajectoire davantage comparables avec les autres. Aussi parmi les variables explicatives, certaines sont obtenues par la décomposition du profil de chaque trajectoire. On a ainsi davantage de détail en ce qui concerne le mouvement et le comportement de la trajectoire.
+
+Tout d'abord nous avons calculé 4 variables de "mouvements" à partir des trajectoires: la vitesse, l'accélération, l'angle entre deux points (direction de deux points consécutifs) et la sinuosité (le chemin effectif divisé par la distance la plus courte). Nous avons ensuite utilisé les méthodes statistiques pour extraire d'autres variables (basées sur les variables de mouvements définis précèdement):
+
+\begin{itemize}
+    \item Moyenne 
+    \item Deviation standard : mesure la dispersion.
+    \item Mode : represente la valeur qui apparait le plus fréquement dans le jeu de données.
+    \item top 3 min
+    \item top 3 max
+    \item Etendue des valeurs
+    \item 1er et 3eme quartiles
+    \item Skewness (coefficient d'asymétrie):  mesure de l’asymétrie de la distribution d’une variable aléatoire réelle
+    \item Kurtosis (coefficient d'applatissement):  mesure de l’aplatissement, ou a contrario de la pointicité, de la distribution d’une variable aléatoire réelle
+    \item ...
+\end{itemize}
+
+
+\subsection{Classification et évaluation du modèle}
+
+Pour cette partie nous avons besoin de données d'apprentissages robustes. Or nous n'en avons pas à l'instant présent. Nous avons donc décider de modéliser un classifieur qui pourra s'appliquer à de futures données robustes.
+
+Le modèle de classifieur, afin de prédire de future données, à besoin d'être "entrainé" sur un jeu de donnée dit d'apprentissage. Nous avons donc constitué un dataframe qui contient $n$ "voyages". A chacun des $n$ voyages est associé $p$ variables explicatives ainsi qu'une réponse $y$ qui correspond au mode de transport utilisé. Le mode de transport, la réponse donc, est en effet la variable que l'on va chercher à prédire. Le but \textit{in fine} est, lorsque que l'on dispose des données GPS d'un voyage d'un utilisateur, de prédire de manière précise et certaine sont mode de transport.\\
+
+Analysons maintenant en détail le jeu de données dont nous disposons.
+
+\subsubsection{Description} Jeu de données composé d'exemples issus de 4 classes correspondants à 4 modes de transport 0,1,2 et 4 (respectivement vehicule, biking, on foot et unclassified).
+
+\subsubsection{Dimensions} 190 observations avec 49 variables prédictives et une étiquette (réponse) dont les labels sont 0,1,2 et 4.
+\begin{itemize}
+    \item Ici $n>p$ cependant n reste très petit par rapport à p. En effet on a seulement 3 fois plus d'observations que de prédicteurs. On aura donc un fléau de dimension aussi appelé problématique de type "high-dimensional" dans la littérature anglaise.
+    \item On fera donc attention au sur-apprentissage, qui peut être plus important sur un jeu de données possédant une dimension légérement plus petite que le nombre d'observation.
+\end{itemize}
+
+\subsubsection{Méthodologie}
+
+\textbf{Analyse numérique des données}\\
+\begin{itemize}
+    \item Analyse des distributions des données afin de savoir si elle sont déjà centrée et réduites;
+    \item Analyse du taux de "représentation" des différentes classes au sein du jeu de données.
+    \begin{itemize}
+        \item Dans le cas où une classe est sur-représentée, par exemples à $90\%$, la mesure de la performance d'un classifieur devrait alors être plus fine que simplement mesurer le pourcentage de données correctement classifiées;
+        \item En effet, un classifieur qui classe simplement toutes les données comme appartenant à la classe sur-représentée aurait, dans l'exemple précédent, un pourcentage d'erreur de $10\%$ seulement, alors qu'il est fondamentalement très mauvais.\\
+    \end{itemize}
+\end{itemize}
+
+\textbf{Familles ou types de modèles testés}\\
+\begin{itemize}
+    \item Random Forest
+    \item Support vector machine avec Kernel linéaire
+    \item Support vector machine avec Kernel plynomial
+    \item Support vector machine avec Kernel gaussien\\
+\end{itemize}
+
+\textbf{Validation croisée K-fold répétée}\\
+
+Pour chaque type de modèle dont on veut tester les performances, on répètera 3 fois une validation croisée de type K-Fold avec $K=5$. Nous nous référerons à ce type de validation croisée en l'appelant "validation croisée 5x3".
+
+Cela veut dire qu'on entrainera $5*3=15$ classifieurs pour chaque modèle testé (plusieurs par famille de modèles afin de sélectionner les hyper-paramètres).\\
+
+\textbf{Recherche et sélection des hyper-paramètres par validation croisée}\\
+
+Les modèles testés possèdent tous un ou plusieurs hyper-paramètres pouvant grandement influencer leurs performances. La sélection de ces hyper-paramètres se fait à l'aide de "grilles" ou "grid" contenant des combinaisons générales et larges d'hyper-paramètres. Une fois la meilleure combinaison choisie (plus faible pourcentage d'erreur par validation croisée), on affine la grille de recherche autour de ces hyper-paramètres.
+
+Dans le cas de modèles à 3 ou plus hyper-paramètres, les combinaisons sont trop nombreuses pour nos capacités de calculs. On a donc opté pour une méthode de séparation : on sélectionne deux hyper-paramètres par validation croisée en gardant le troisième constant à sa valeur théorique par défaut, puis ce sont les deux premiers hyper-paramètres qui deviennent constant (avec les valeurs trouvées précédemment) et le troisième qui est sélectionné par validation croisée.
+
+C'est par exemple ce que nous avons fait pour le modèle de SVM à kernel polynomial, dans lequel il y a trois hyper-paramètres : le coût ($C$), le degré du polynôme et le "scale" (mesure de la dispersion des observations). Nous avons d'abord effectué le tuning du coût et du degré en gardant le scale à sa valeur par défaut (1 / nombre de prédicteurs). Puis une fois les meilleures valeurs du coût et du degré déterminées par validation croisée, nous relançons une dernière passe de tuning pour "scale" autour de sa valeur par défaut.\\
+
+\textbf{Construction de statistiques mesurant les performances des modèles}\\
+
+Dans chacun des jeux de données, les classes sont représentées de manière équitable. On utilisera donc la moyenne des pourcentages d'erreur des validations croisées répétées comme statistique de mesure de performance des modèles, ainsi que son intervalle de confiance.
+
+Pour le modèle sélectionné, nous détaillerons les étapes de tuning ayant conduit au choix des valeurs des hyper-paramètres.
+
+
+\subsubsection{Analyse statistique des données}
+
+\begin{figure}[!h]
+  \centering\epsfig{figure=no_center.pdf,width=8cm}
+ \captionsetup{justification=centering}
+    \caption{Distribution des variables}
+\end{figure}
+
+On remarque bien ici que les variables prédictives ne sont pas centrées-réduites. Ce qu'on confirme à l'aide d'une analyse numérique, leur moyenne ne sont pas proche de zéro et leur écarts-type pas proche de 1). On procéde donc à un centrage-réduction.
+Alors on obtient le graphique suivant:
+
+\begin{figure}[H]
+  \centering\epsfig{figure=Center.pdf,width=8cm}
+ \captionsetup{justification=centering}
+    \caption{Distribution des variables après centrage-réduction}
+\end{figure}
+
+Ensuite, on se penche sur la corrélation des variables. Comme on peut s'y attendre, certaines variables sont très corrélées entre elles. En effet, certains prédicteurs sont calculés en fonction d'autres prédicteurs.
+
+\begin{figure}[H]
+  \centering\epsfig{figure=Cor.pdf,width=12cm}
+ \captionsetup{justification=centering}
+    \caption{Corrélation des variables entre elles}
+\end{figure}
+
+On peut penser à décorréler les variables à l'aide d'une ACP. Cependant après calculs une ACP n'améliore pas le modèle de classifieur final. On choisi donc de poursuivre avec des variables corrélées.\\
+
+Enfin, les classes, au nombres de 4, sont distribués de manière très disproportionnée.
+
+\begin{table}[ht]
+\centering
+\captionsetup{justification=centering}
+    \caption{Proportion des classes}
+\begin{tabular}{rrrrrrr}
+  \hline
+ 0 & 1 & 2 & 4 \\ 
+  \hline
+46.315789 & 1.578947 & 49.473684 &  1.052632   \\
+ 
+\end{tabular}
+\end{table}
+
+On sait donc d'avance que notre modèle tendra a être efficace pour prédire les classes 0 et 2 (similairement réparties). Mais totalement inefficace pour les classes 1 et 4 qui sont extrêmement peu présentes dans notre jeu de données.\\
+
+Etant donnée les répartitions des classes 1 et 4 on choisi de travailler sans les observations correspondantes. En effet il est inutile d'essayer de prédire des classes représentant chacune seulement $1\%$ des classes du data set.\\
+
+On a donc les nouvelles proportions suivantes:
+
+\begin{table}[ht]
+\centering
+\captionsetup{justification=centering}
+    \caption{Nouvelles proportion des classes}
+\begin{tabular}{rrrrrrr}
+  \hline
+ 0 & 2 \\ 
+  \hline
+47.56757 & 50.81081  \\
+\end{tabular}
+\end{table}
+
+Le paramètre $n$ vaut maintenant $182$. La taille du jeu de donnée a peu changé.
+
+\subsubsection{Performance des modèles}
+
+\begin{table}[H]
+\centering
+\captionsetup{justification=centering}
+    \caption{Performance des modèles}
+\begin{tabular}{rrrrrrr}
+  \hline
+  id & Modèle & Erreur de Validation Croisée (en \%) & Intervalle de confiance (en \%)\\ 
+  \hline
+$C_{1}$ & Random forest & 9.32 & [ 4.66 , 13.99 ]  \\
+$C_{2}$ &SVM Kernel linear & 10.59 & [ 5.75 , 15.44 ] \\
+$C_{3}$ &SVM Kernel polynomial & 8.95 & [ 2.72 , 15.18 ]  \\
+$C_{4}$ &SVM Kernel Gaussian & 29.86 & [ 23.20 , 36.53 ]   \\
+   
+\end{tabular}
+\end{table}
+
+\subsubsection{Choix du modèle}
+
+C'est le classifieur $C_{3}$ (SVM Kernel polynomial) qui minimise l'erreur de validation croisée.
+Nous choisirons ce classifieur pour de futurs prédictions et allons en expliciter la méthode de construction.
+
+\subsubsection{Processus de tuning du modèle choisi}
+
+Afin de sélectionner les meilleurs hyper-paramètres $C$ (coût) et $\sigma$ (l'écart type de la distribution gaussienne), nous avons sélectionner une grille de combinaisons de $C$ et $\sigma$ avec $C=\{  0.1, 1, 10, 100 \}$ et $\sigma=\{1,2,3,4\}$.
+
+La figure ci-dessous représente les taux de classification correcte (avec validation croisée 5x3) pour la grille de tuning.
+
+\begin{figure}[H]
+  \centering\epsfig{figure=poly_grid.pdf,width=10cm}
+ \captionsetup{justification=centering}
+    \caption{Tuning du SVM Kernel polynomial}
+\end{figure}
+
+
+Conclusions de la première grille de tuning:
+Les meilleurs performances sont obtenues pour un coût $C=1$ et pour un degré de 3. Cependant, pour coût proche de 0 ($C$>0) on voit que la courbe est vite décroissante. On va donc affiner la grille de tuning pour $C$ entre 0 et 1.
+
+\begin{figure}[H]
+  \centering\epsfig{figure=cost_grid.pdf,width=10cm}
+ \captionsetup{justification=centering}
+    \caption{Tuning du SVM Kernel polynomial autour de Cost ($C$)}
+\end{figure}
+
+On trouve alors finalement un modèle optimal avec $C=0.7$.
+
+\subsubsection{Conclusion du classifieur}
+
+Le problème posé par le jeu de données est, comme nous l'avons vu précédement, "high-dimensional". En effet nous avons beaucoup de prédicteurs pour peu d'observations. Cependant, avec un taux de bonne classification de $91.05\%$ notre classifieur est performant. Avec encore davantage de données il serait encore plus précis.
+
+Aussi nous avons pu entrainer notre classifieur sur des observations appartenant à 2 classes. Si on ajoutait des observations correspondant à d'autre classes alors notre classifieur serait plus complet car capable de prédire davanatge de classes. Mais alors peut être qu'un autre modèle SVM Gaussien, Random forest ...) serait plus précis.
+Si un tel jeu de données se présente (actuellement nous n'en avons pas) alors on pourra utiliser les classifieurs tout prêts fournis en annexe.
+
+\subsubsection{Pistes d'améliorations}
+
+Idéalement il nous faudrait un jeu de données robuste afin de prédire efficacement toutes les classes de transport possible. Mais, on le sait, réaliser un tel jeu de données est très compliqué et très chronophage (activer l'application à chaque début/fin de voyage pour des dizaines d'utilisateurs).
+Cependant ce n'est pas impossible et si on pouvait avoir environs 100 observations pour tous les modes de transports alors on pourrait construire un classifieur davantage fiable et exhaustif (tous les modes de transport : biking, foot, car, bus ...).
+
+
+\newpage
+
+\section{Pattern}
+\subsection{Problematique}
+Il nous a ete demandé d'analyser les habitudes des utilisateur de l'application pour comprendre quel moyen de transport est utilisépour tel ou tel deplacement. Le but est de pouvoir identifier le moyen de transport utilisépour effectuer des deplacement "quotidient" comme par exemple le trajet "maison->bureau" ou bien un trajet inhabituel. Pour ce faire il faut identifier les lieux habituels des utilisateurs c'est a dire les lieux qu'il frequente de maniere reguliere dans le temps. 
+L'idée globale est de pouvoir par la suite grace au profil de chaque utilisateur comprendre la correlation entre les moyens de transports les plus utilisé et par exemple la distance entre le lieu d'habitation et le lieu de travail voir meme une correlation entre la tranche d'age de la personne et son moyen de locomotion favori.\\
+
+Dans cette partie nous avons reussi a extraire les lieux d'interet des utilisateurs, malheuresement nous n'avons su pas  identifi les types de lieu: "maison" "bureau" "courses" etc.\\ 
+
+Pour la realisation nous nous sommes inspiré de l'article "Periodic Pattern Mining Based on GPS Trajectories" qui donne une mèthode pour trouver des pattern à partir de donnée GPS. 
+Nous allons donc utiliser le Periode Pattern Mining pour pouvoir obtenir des activités périodiques.
+Voici un schèma pris de l'article qui explique l'idée generale.
+\begin{figure}[!h]
+  \centering\epsfig{figure=Patter.png,width=7cm}
+ \captionsetup{justification=centering}
+    \caption{Periode Pattern Mining}
+\end{figure}
+
+\subsection{Filtrage des données}
+Avant de commencer l'analyse il a fallu procéder à l'étape de filtrage des données et de calcul des vitesses pour tous les points.
+Le filtrage consiste à retirer tous les utilisateurs n'ayant uniquement un seul enregistrement dans notre jeu de données sur 144 users il y a eu 11 users avec un enregistrement unique, nous les avons donc retirés.
+Le calcul des vitesses est le meme que dans la partie precedente. 
+Nous avons par la suite fixé les deux limites, la limite de temps et la limite de vitesse.
+Dans le document que nous avons pris comme support, la méthode utilise un temps minimal d'arret et une distance maximale. Dans notre code nous avons choisi d'utiliser une limite de temps et une limite de vitesse. 
+\subsection{Les points d'arrêts}
+Un point d'arret est une zone géographique où l'utilisateur s'arrete pendant une periode donnée. Pour trouver ces zones il faut donc definir une limite de temps d'arret et une limite de vitesse car les points GPS ne sont pas d'une très grande précision. Dans notre cas nous avons choisi ces parametre de maniere empirirque nous avons fixé le temps à au moins 1/4 d'heure et la vitesse max à 0.8 km/h.
+\subsection{Les points d'interet}
+Après avoir trouvé les points d'arrêts il nous a fallu utiliser un algorithme de clustering pour regrouper les points d'arrets en clusters.
+Nous avons utiliser le dbscan clustering c'est à dire un regroupement par densité. 
+Les centroides de chacun des clusters correspondent aux points d'interet.
+
+\begin{figure}[!h]
+  \centering\epsfig{figure=Rplot.png,width=7cm}
+ \captionsetup{justification=centering}
+    \caption{Résultat obtenu pour un utilisateur}
+\end{figure}
+\subsection{Fonction}
+La fonction pattern(user,Tlim,Vlim) prends en parametre le numero de l'utilisateur dans le dataframe userpattern, le temps limite et la vitesse limite deux parametres importants pour definir les conditions d'imobilité. 
+La fonction retourne en sortie les differents points d'arrêts et les clusters. 
+
+\subsection{Piste d'amelioration Pattern}
+\begin{itemize}
+    \item Calculer la periodicité des points d'interet. Cela permet de voir si un lieu est visité d'une maniere frequente ou de maniere occasionel. 
+    \item Interoger une API pour pouvoir connaitre la nature des lieux et donc nommer les points d'interets que nous avons extrait.
+    \item A l'aide à un ensemble d'apprentissage choisir les meilleurs parametre de seuil de temps et de vitesse.
+\end{itemize}
+
+
+\end{document}
